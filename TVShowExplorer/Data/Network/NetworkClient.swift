@@ -20,10 +20,10 @@ protocol NetworkClientProtocol: Sendable {
 
 final class NetworkClient: NetworkClientProtocol {
 
-    private let urlSession: any URLSessionProtocol
+    private let urlSession: URLSessionProtocol
     private let decoder: JSONDecoder
 
-    init(urlSession: any URLSessionProtocol,
+    init(urlSession: URLSessionProtocol,
          decoder: JSONDecoder = JSONDecoder()) {
         self.urlSession = urlSession
         self.decoder = decoder
