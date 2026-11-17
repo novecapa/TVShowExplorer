@@ -16,3 +16,18 @@ extension URLSession: URLSessionProtocol {
         try await data(for: request)
     }
 }
+
+// MARK: - Uncached session (TVMaze API)
+
+extension URLSession {
+    static let uncached = URLSession(configuration: .uncached)
+}
+
+private extension URLSessionConfiguration {
+    static var uncached: URLSessionConfiguration {
+        let configuration = URLSessionConfiguration.default
+        configuration.urlCache = nil
+        configuration.requestCachePolicy = .reloadIgnoringLocalCacheData
+        return configuration
+    }
+}

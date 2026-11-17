@@ -12,13 +12,24 @@ import Foundation
 final class TVSearchRepository: TVSearchRepositoryProtocol {
 
     private let remote: TVSearchRemoteProtocol
+    private let cache: TVSearchCache
 
-    init(remote: TVSearchRemoteProtocol) {
+    init(remote: TVSearchRemoteProtocol, cache: TVSearchCache) {
         self.remote = remote
+        self.cache = cache
     }
 
     func searchShows(for query: String) async throws -> [TVShow] {
-        try await remote.searchShows(for: query).map { $0.show.toEntity }
+        let cachedShows = await cache.shows(for: query)
+        try Task.checkCancellation()
+        if let cachedShows {
+            return cachedShows
+        }
+
+        let shows = try await remote.searchShows(for: query).map { $0.show.toEntity }
+        try Task.checkCancellation()
+        await cache.store(shows, for: query)
+        return shows
     }
 }
 

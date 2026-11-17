@@ -46,7 +46,8 @@ final class TVSearchRemote: TVSearchRemoteProtocol {
     func searchShows(for query: String) async throws -> [TVShowSearchResultDTO] {
         try await networkClient.call(urlString: Endpoints.searchShows.rawValue,
                                      method: .get,
-                                     queryItems: [URLQueryItem(name: Constants.query, value: query)],
+                                     queryItems: [URLQueryItem(name: Constants.query,
+                                                               value: query)],
                                      of: [TVShowSearchResultDTO].self)
     }
 }
