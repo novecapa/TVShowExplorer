@@ -50,7 +50,7 @@ struct SearchView: View {
             ContentUnavailableView {
                 Label("Something Went Wrong", systemImage: "exclamationmark.triangle")
             } description: {
-                Text("We couldn't load the shows. Check your connection and try again.")
+                Text("We couldn't load the shows. Please try again.")
             } actions: {
                 Button("Retry") {
                     viewModel.retry()
