@@ -33,10 +33,12 @@ actor TVSearchCache {
     func shows(for query: String) -> [TVShow]? {
         let key = Self.key(for: query)
         guard let entry = entries[key] else { return nil }
-        guard now() < entry.expirationDate else {
+        let currentDate = now()
+        guard currentDate < entry.expirationDate else {
             entries[key] = nil
             return nil
         }
+        logCacheHit(entry, key: key, at: currentDate)
         return entry.shows
     }
 
@@ -47,5 +49,15 @@ actor TVSearchCache {
 
     private static func key(for query: String) -> String {
         query.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+    }
+
+    private func logCacheHit(_ entry: Entry, key: String, at date: Date) {
+        #if DEBUG
+        let expiresIn = Int(entry.expirationDate.timeIntervalSince(date))
+        print("------------------------------------------")
+        print("💾 CACHE ✅ [HIT] \"\(key)\"")
+        print("   \(entry.shows.count) shows · expires in \(expiresIn)s")
+        print("------------------------------------------")
+        #endif
     }
 }
