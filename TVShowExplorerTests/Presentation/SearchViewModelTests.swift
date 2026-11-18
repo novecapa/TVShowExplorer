@@ -321,6 +321,19 @@ final class SearchViewModelTests: XCTestCase {
         XCTAssertEqual(viewModel.state, .idle)
     }
 
+    func test_cancellationErrorWithoutCancelledSearch_showsError() async {
+        // Given: a dependency throws a cancellation error although the search itself is still current
+        let useCase = TVSearchUseCaseMock(results: [Constants.query: .failure(CancellationError())])
+        let viewModel = makeViewModel(useCase: useCase)
+
+        // When
+        viewModel.query = Constants.query
+        await viewModel.searchTask?.value
+
+        // Then
+        XCTAssertEqual(viewModel.state, .error)
+    }
+
     func test_clearingQuery_whileSearchIsInFlight_ignoresLateResults() async {
         // Given: the search is in flight and its use case ignores cancellation
         let useCase = TVSearchUseCaseMock(results: [Constants.query: .success([Constants.breakingBad])],

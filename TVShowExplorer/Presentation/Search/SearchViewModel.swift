@@ -71,12 +71,13 @@ private extension SearchViewModel {
             let shows = try await useCase.searchShows(for: text)
             guard !Task.isCancelled else { return }
             state = shows.isEmpty ? .empty : .loaded(shows)
-        } catch is CancellationError {
-            #if DEBUG
-            print("🔍 SEARCH 🚫 [CANCELLED] \"\(text)\"")
-            #endif
         } catch {
-            guard !Task.isCancelled else { return }
+            guard !Task.isCancelled else {
+                #if DEBUG
+                print("🔍 SEARCH 🚫 [CANCELLED] \"\(text)\"")
+                #endif
+                return
+            }
             state = .error
         }
     }
