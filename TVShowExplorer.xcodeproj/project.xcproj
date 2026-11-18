@@ -60,16 +60,15 @@
         "SWIFT_VERSION": "6.0",
         "TARGETED_DEVICE_FAMILY": "1,2",
       },
-    },
-    {
+    }, {
       "name": "TVShowExplorerTests",
       "id": "729B698A30AC994200AE2CEB",
       "product": "Products/TVShowExplorerTests.xctest",
       "product-type": "bundle.unit-test",
+      "test-host-target": "TVShowExplorer",
       "dependencies": [
         "TVShowExplorer",
       ],
-      "test-host-target": "TVShowExplorer",
       "build-phases": [
         "compile-sources",
         "frameworks",

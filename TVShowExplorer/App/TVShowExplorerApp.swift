@@ -11,7 +11,7 @@ import SwiftUI
 struct TVShowExplorerApp: App {
     var body: some Scene {
         WindowGroup {
-            Text("TVShowExplorerApp")
+            SearchViewBuilder().build()
         }
     }
 }

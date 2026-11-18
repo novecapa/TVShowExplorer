@@ -170,25 +170,3 @@ final class TVSearchCacheTests: XCTestCase {
         XCTAssertEqual(shows, [], "An empty result is a cache hit, not a miss")
     }
 }
-
-// MARK: - Stubs
-
-private extension TVShow {
-    static func stub(id: Int, name: String) -> TVShow {
-        TVShow(id: id,
-               name: name,
-               type: nil,
-               language: nil,
-               genres: [],
-               status: nil,
-               premiered: nil,
-               ended: nil,
-               summary: nil,
-               rating: nil,
-               mediumImageURL: nil,
-               originalImageURL: nil,
-               runtime: nil,
-               channel: nil,
-               officialSite: nil)
-    }
-}
