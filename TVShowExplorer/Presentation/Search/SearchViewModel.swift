@@ -36,7 +36,7 @@ final class SearchViewModel {
     @ObservationIgnored private let debounce: Duration
 
     init(useCase: TVSearchUseCaseProtocol,
-         debounce: Duration = .milliseconds(300)) {
+         debounce: Duration = .milliseconds(800)) {
         self.useCase = useCase
         self.debounce = debounce
     }
