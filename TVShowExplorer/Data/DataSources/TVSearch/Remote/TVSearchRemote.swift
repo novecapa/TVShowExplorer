@@ -19,10 +19,8 @@ final class TVSearchRemote: TVSearchRemoteProtocol {
 
     private enum Endpoints {
 
-        // MARK: Base URL
         private static let baseURL = "https://api.tvmaze.com/"
 
-        // MARK: Endpoints
         case searchShows
 
         var rawValue: String {

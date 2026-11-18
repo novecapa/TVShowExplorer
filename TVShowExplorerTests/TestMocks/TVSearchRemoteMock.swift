@@ -5,7 +5,6 @@
 //  Created by Josep Cerdá Penadés on 17/11/2026.
 //
 
-import Foundation
 @testable import TVShowExplorer
 
 actor TVSearchRemoteMock: TVSearchRemoteProtocol {

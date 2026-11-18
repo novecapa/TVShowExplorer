@@ -5,8 +5,6 @@
 //  Created by Josep Cerdá Penadés on 18/11/2026.
 //
 
-import Foundation
-
 final class DetailViewBuilder {
 
     @MainActor

@@ -7,8 +7,6 @@
 
 import Foundation
 
-// MARK: - TVSearchCache
-
 actor TVSearchCache {
 
     private enum Constants {

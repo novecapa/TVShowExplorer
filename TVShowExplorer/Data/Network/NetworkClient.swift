@@ -52,7 +52,6 @@ final class NetworkClient: NetworkClientProtocol {
 
         let data: Data
         let response: URLResponse
-        let start = ContinuousClock.now
         do {
             (data, response) = try await urlSession.getDataFrom(request)
         } catch let error as URLError where error.code == .cancelled {
@@ -60,14 +59,13 @@ final class NetworkClient: NetworkClientProtocol {
         } catch is URLError {
             throw NetworkError.connectivity
         }
-        let duration = ContinuousClock.now - start
         try Task.checkCancellation()
 
         guard let response = response as? HTTPURLResponse else {
             throw NetworkError.badResponse
         }
 
-        logThisRequest(response, data: data, request: request, duration: duration)
+        logThisRequest(response, request: request)
 
         switch response.statusCode {
         case 200..<300:
@@ -89,20 +87,14 @@ final class NetworkClient: NetworkClientProtocol {
         }
     }
 
-    private func logThisRequest(_ response: HTTPURLResponse,
-                                data: Data,
-                                request: URLRequest,
-                                duration: Duration) {
+    private func logThisRequest(_ response: HTTPURLResponse, request: URLRequest) {
         #if DEBUG
         let code = response.statusCode
         let icon = (200..<300).contains(code) ? "✅" : "❌"
         let method = request.httpMethod ?? ""
         let url = (response.url ?? request.url)?.absoluteString ?? ""
-        let time = duration.formatted(.units(allowed: [.milliseconds], width: .narrow))
-        let size = Int64(data.count).formatted(.byteCount(style: .file))
         print("------------------------------------------")
         print("🌐 NETWORK \(icon) [\(code)] \(method) \(url)")
-        print("   \(time) · \(size)")
         print("------------------------------------------")
         #endif
     }

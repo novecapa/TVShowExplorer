@@ -1,5 +1,5 @@
 //
-//  DetailViewBuilderMock.swift
+//  TVShow+Mocks.swift
 //  TVShowExplorer
 //
 //  Created by Josep Cerdá Penadés on 18/11/2026.
@@ -8,17 +8,6 @@
 import Foundation
 
 #if DEBUG
-
-final class DetailViewBuilderMock {
-
-    @MainActor
-    func build(show: TVShow = .mock) -> DetailView {
-        let viewModel = DetailViewModel(show: show)
-        return DetailView(viewModel: viewModel)
-    }
-}
-
-// MARK: - TVShow preview mocks
 
 extension TVShow {
 

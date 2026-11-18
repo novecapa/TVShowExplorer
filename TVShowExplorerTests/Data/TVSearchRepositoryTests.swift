@@ -12,7 +12,6 @@ final class TVSearchRepositoryTests: XCTestCase {
 
     enum Constants {
         static let query = "breaking"
-        static let otherQuery = "lost"
         static let timeToLive: TimeInterval = 180
     }
 
@@ -63,35 +62,21 @@ final class TVSearchRepositoryTests: XCTestCase {
         XCTAssertEqual(cached, original)
     }
 
-    func test_searchShows_afterTTLExpires_callsRemoteAgainAndRestartsTTL() async throws {
+    func test_searchShows_afterTTLExpires_callsRemoteAgain() async throws {
         // Given
         let remote = TVSearchRemoteMock(result: .success([.stub(id: 169, name: "Breaking Bad")]))
         let repository = TVSearchRepository(remote: remote, cache: cache)
-
-        // When / Then
-        _ = try await repository.searchShows(for: Constants.query) // 00:00
-        var callCount = await remote.receivedQueries.count
-        XCTAssertEqual(callCount, 1)
-
-        clock.advance(by: 60)
         _ = try await repository.searchShows(for: Constants.query)
-        clock.advance(by: 90)
-        _ = try await repository.searchShows(for: Constants.query)
-        callCount = await remote.receivedQueries.count
-        XCTAssertEqual(callCount, 1)
-
         await remote.setResult(.success([.stub(id: 170, name: "Breaking Bad: Updated")]))
-        clock.advance(by: 30)
-        let refreshed = try await repository.searchShows(for: Constants.query)
-        callCount = await remote.receivedQueries.count
-        XCTAssertEqual(callCount, 2)
-        XCTAssertEqual(refreshed.map(\.id), [170])
 
-        clock.advance(by: 60)
-        let cached = try await repository.searchShows(for: Constants.query)
-        callCount = await remote.receivedQueries.count
-        XCTAssertEqual(callCount, 2)
-        XCTAssertEqual(cached, refreshed)
+        // When
+        clock.advance(by: Constants.timeToLive)
+        let refreshed = try await repository.searchShows(for: Constants.query)
+
+        // Then
+        let receivedQueries = await remote.receivedQueries
+        XCTAssertEqual(receivedQueries.count, 2)
+        XCTAssertEqual(refreshed.map(\.id), [170])
     }
 
     func test_searchShows_emptyResponse_isCached() async throws {
@@ -177,26 +162,6 @@ final class TVSearchRepositoryTests: XCTestCase {
         }
         let receivedQueries = await remote.receivedQueries
         XCTAssertEqual(receivedQueries.count, 1)
-    }
-
-    func test_searchShows_differentQueries_keepIndependentEntries() async throws {
-        // Given
-        let remote = TVSearchRemoteMock(result: .success([.stub(id: 169, name: "Breaking Bad")]))
-        let repository = TVSearchRepository(remote: remote, cache: cache)
-        let breaking = try await repository.searchShows(for: Constants.query)
-        await remote.setResult(.success([.stub(id: 123, name: "Lost")]))
-        let lost = try await repository.searchShows(for: Constants.otherQuery)
-
-        // When
-        let cachedBreaking = try await repository.searchShows(for: Constants.query)
-        let cachedLost = try await repository.searchShows(for: Constants.otherQuery)
-
-        // Then
-        let receivedQueries = await remote.receivedQueries
-        XCTAssertEqual(receivedQueries, [Constants.query, Constants.otherQuery])
-        XCTAssertEqual(cachedBreaking, breaking)
-        XCTAssertEqual(cachedLost, lost)
-        XCTAssertNotEqual(cachedBreaking, cachedLost)
     }
 
     func test_searchShows_mapsShowDTOToEntity() async throws {

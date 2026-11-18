@@ -30,10 +30,9 @@ final class SearchViewModel {
     private(set) var state: State = .idle
 
     @ObservationIgnored private(set) var searchTask: Task<Void, Never>?
-    @ObservationIgnored private var searchID = 0
 
-    @ObservationIgnored private let useCase: TVSearchUseCaseProtocol
-    @ObservationIgnored private let debounce: Duration
+    private let useCase: TVSearchUseCaseProtocol
+    private let debounce: Duration
 
     init(useCase: TVSearchUseCaseProtocol,
          debounce: Duration = .milliseconds(800)) {
@@ -52,7 +51,6 @@ private extension SearchViewModel {
 
     func search() {
         searchTask?.cancel()
-        searchID += 1
 
         let text = query.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty else {
@@ -62,20 +60,19 @@ private extension SearchViewModel {
         }
 
         state = .loading
-        let id = searchID
         searchTask = Task {
-            await performSearch(text, id: id)
+            await performSearch(text)
         }
     }
 
-    func performSearch(_ text: String, id: Int) async {
+    func performSearch(_ text: String) async {
         do {
             try await Task.sleep(for: debounce)
             let shows = try await useCase.searchShows(for: text)
-            guard id == searchID else { return }
+            guard !Task.isCancelled else { return }
             state = shows.isEmpty ? .empty : .loaded(shows)
         } catch {
-            guard id == searchID else { return }
+            guard !Task.isCancelled else { return }
             state = .error
         }
     }

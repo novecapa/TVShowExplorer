@@ -167,31 +167,31 @@ private extension DetailView {
 
 #Preview("Complete") {
     NavigationStack {
-        DetailViewBuilderMock().build()
+        DetailViewBuilder().build(show: .mock)
     }
 }
 
 #Preview("Without image") {
     NavigationStack {
-        DetailViewBuilderMock().build(show: .mockWithoutImage)
+        DetailViewBuilder().build(show: .mockWithoutImage)
     }
 }
 
 #Preview("Without rating and genres") {
     NavigationStack {
-        DetailViewBuilderMock().build(show: .mockWithoutRatingAndGenres)
+        DetailViewBuilder().build(show: .mockWithoutRatingAndGenres)
     }
 }
 
 #Preview("Without summary") {
     NavigationStack {
-        DetailViewBuilderMock().build(show: .mockWithoutSummary)
+        DetailViewBuilder().build(show: .mockWithoutSummary)
     }
 }
 
 #Preview("Long content") {
     NavigationStack {
-        DetailViewBuilderMock().build(show: .mockLongContent)
+        DetailViewBuilder().build(show: .mockLongContent)
     }
 }
 
