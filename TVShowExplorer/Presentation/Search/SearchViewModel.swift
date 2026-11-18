@@ -35,7 +35,7 @@ final class SearchViewModel {
     private let debounce: Duration
 
     init(useCase: TVSearchUseCaseProtocol,
-         debounce: Duration = .milliseconds(800)) {
+         debounce: Duration = .milliseconds(450)) {
         self.useCase = useCase
         self.debounce = debounce
     }
@@ -71,6 +71,10 @@ private extension SearchViewModel {
             let shows = try await useCase.searchShows(for: text)
             guard !Task.isCancelled else { return }
             state = shows.isEmpty ? .empty : .loaded(shows)
+        } catch is CancellationError {
+            #if DEBUG
+            print("🔍 SEARCH 🚫 [CANCELLED] \"\(text)\"")
+            #endif
         } catch {
             guard !Task.isCancelled else { return }
             state = .error
