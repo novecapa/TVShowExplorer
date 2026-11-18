@@ -75,18 +75,6 @@ final class TVSearchCacheTests: XCTestCase {
         XCTAssertNil(shows)
     }
 
-    func test_shows_after181Seconds_isExpired() async {
-        // Given
-        await cache.store([.stub(id: 1, name: "Breaking Bad")], for: Constants.query)
-
-        // When
-        clock.advance(by: 181)
-        let shows = await cache.shows(for: Constants.query)
-
-        // Then
-        XCTAssertNil(shows)
-    }
-
     func test_shows_readingDoesNotRestartTTL() async {
         // Given
         await cache.store([.stub(id: 1, name: "Breaking Bad")], for: Constants.query)

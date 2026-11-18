@@ -10,20 +10,13 @@ import Foundation
 struct TVShowDTO: Decodable, Sendable {
     let id: Int
     let name: String
-    let type: String?
-    let language: String?
     let genres: [String]
-    let status: String?
-    let runtime: Int?
-    let averageRuntime: Int?
     let premiered: String?
     let ended: String?
-    let officialSite: String?
     let summary: String?
 
     let rating: TVRatingDTO?
     let image: TVImageDTO?
-    let schedule: TVScheduleDTO?
     let network: TVNetworkDTO?
     let webChannel: TVNetworkDTO?
 }
@@ -39,9 +32,4 @@ struct TVNetworkDTO: Decodable, Sendable {
 
 struct TVRatingDTO: Decodable, Sendable {
     let average: Double?
-}
-
-struct TVScheduleDTO: Decodable, Sendable {
-    let time: String
-    let days: [String]
 }

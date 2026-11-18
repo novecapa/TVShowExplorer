@@ -11,33 +11,35 @@ import Foundation
 actor TVSearchUseCaseMock: TVSearchUseCaseProtocol {
 
     private(set) var receivedQueries: [String] = []
-    private let results: [String: Result<[TVShow], Error>]
-    private let heldQuery: String?
-    private var heldRequest: CheckedContinuation<Void, Never>?
-    private var heldRequestArrival: CheckedContinuation<Void, Never>?
+    private var results: [String: Result<[TVShow], Error>]
+    private let heldQueries: Set<String>
+    private var heldRequests: [String: CheckedContinuation<Void, Never>] = [:]
+    private var heldRequestArrivals: [String: CheckedContinuation<Void, Never>] = [:]
 
-    init(results: [String: Result<[TVShow], Error>] = [:], holding heldQuery: String? = nil) {
+    init(results: [String: Result<[TVShow], Error>] = [:], holding heldQueries: String...) {
         self.results = results
-        self.heldQuery = heldQuery
+        self.heldQueries = Set(heldQueries)
+    }
+
+    func setResult(_ result: Result<[TVShow], Error>, for query: String) {
+        results[query] = result
     }
 
     func searchShows(for query: String) async throws -> [TVShow] {
         receivedQueries.append(query)
-        if query == heldQuery {
-            heldRequestArrival?.resume()
-            heldRequestArrival = nil
-            await withCheckedContinuation { heldRequest = $0 }
+        if heldQueries.contains(query) {
+            heldRequestArrivals.removeValue(forKey: query)?.resume()
+            await withCheckedContinuation { heldRequests[query] = $0 }
         }
         return try (results[query] ?? .success([])).get()
     }
 
-    func waitForHeldQuery() async {
-        guard heldRequest == nil else { return }
-        await withCheckedContinuation { heldRequestArrival = $0 }
+    func waitForHeldQuery(_ query: String) async {
+        guard heldRequests[query] == nil else { return }
+        await withCheckedContinuation { heldRequestArrivals[query] = $0 }
     }
 
-    func releaseHeldQuery() {
-        heldRequest?.resume()
-        heldRequest = nil
+    func releaseHeldQuery(_ query: String) {
+        heldRequests.removeValue(forKey: query)?.resume()
     }
 }

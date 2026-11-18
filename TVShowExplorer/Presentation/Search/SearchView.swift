@@ -23,7 +23,7 @@ struct SearchView: View {
                             placement: .navigationBarDrawer(displayMode: .always),
                             prompt: "Search by show name")
                 .navigationDestination(for: TVShow.self) { show in
-                    DetailView(show: show)
+                    DetailViewBuilder().build(show: show)
                 }
         }
     }

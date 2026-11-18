@@ -39,19 +39,14 @@ private extension TVShowDTO {
     var toEntity: TVShow {
         TVShow(id: id,
                name: name,
-               type: type,
-               language: language,
                genres: genres,
-               status: status,
                premiered: premiered,
                ended: ended,
                summary: summary?.htmlToPlainText,
                rating: rating?.average,
                mediumImageURL: image?.medium,
                originalImageURL: image?.original,
-               runtime: runtime ?? averageRuntime,
-               channel: network?.name ?? webChannel?.name,
-               officialSite: officialSite.flatMap { URL(string: $0) })
+               channel: network?.name ?? webChannel?.name)
     }
 }
 
@@ -60,15 +55,20 @@ private extension TVShowDTO {
 private extension String {
     var htmlToPlainText: String? {
         let text = self
+            .replacing(/\s+/, with: " ")
             .replacing(/<\/p>|<br\s*\/?>/.ignoresCase(), with: "\n")
             .replacing(/<[^>]+>/, with: "")
             .replacing("&quot;", with: "\"")
             .replacing("&#39;", with: "'")
+            .replacing("&apos;", with: "'")
             .replacing("&lt;", with: "<")
             .replacing("&gt;", with: ">")
             .replacing("&nbsp;", with: " ")
             .replacing("&amp;", with: "&")
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-        return text.isEmpty ? nil : text
+        let paragraphs = text
+            .split(separator: "\n")
+            .map { $0.trimmingCharacters(in: .whitespaces) }
+            .filter { !$0.isEmpty }
+        return paragraphs.isEmpty ? nil : paragraphs.joined(separator: "\n")
     }
 }

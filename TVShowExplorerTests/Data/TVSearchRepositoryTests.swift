@@ -44,23 +44,23 @@ final class TVSearchRepositoryTests: XCTestCase {
         let receivedQueries = await remote.receivedQueries
         XCTAssertEqual(receivedQueries, [Constants.query])
         XCTAssertEqual(shows.map(\.id), [169])
-        XCTAssertEqual(shows.map(\.name), ["Breaking Bad"])
     }
 
     func test_searchShows_secondSearchBeforeTTL_usesCacheWithoutCallingRemote() async throws {
         // Given
-        let remote = TVSearchRemoteMock(result: .success([.stub(id: 169, name: "Breaking Bad")]))
+        let remote = TVSearchRemoteMock(result: .success([.stub(id: 169, name: "Breaking Bad"),
+                                                          .stub(id: 6061, name: "Breaking Point")]))
         let repository = TVSearchRepository(remote: remote, cache: cache)
-        _ = try await repository.searchShows(for: Constants.query)
+        let original = try await repository.searchShows(for: Constants.query)
 
         // When
         clock.advance(by: Constants.timeToLive - 1)
-        let shows = try await repository.searchShows(for: Constants.query)
+        let cached = try await repository.searchShows(for: Constants.query)
 
         // Then
         let receivedQueries = await remote.receivedQueries
         XCTAssertEqual(receivedQueries.count, 1)
-        XCTAssertEqual(shows.map(\.id), [169])
+        XCTAssertEqual(cached, original)
     }
 
     func test_searchShows_afterTTLExpires_callsRemoteAgainAndRestartsTTL() async throws {
@@ -199,45 +199,109 @@ final class TVSearchRepositoryTests: XCTestCase {
         XCTAssertNotEqual(cachedBreaking, cachedLost)
     }
 
-    func test_searchShows_cachedResponse_isEquivalentToOriginal() async throws {
+    func test_searchShows_mapsShowDTOToEntity() async throws {
         // Given
-        let remote = TVSearchRemoteMock(result: .success([.stub(id: 169, name: "Breaking Bad"),
-                                                          .stub(id: 6061, name: "Breaking Point")]))
+        let remote = TVSearchRemoteMock(result: .success([.stub(id: 169, name: "Breaking Bad")]))
         let repository = TVSearchRepository(remote: remote, cache: cache)
-        let original = try await repository.searchShows(for: Constants.query)
 
         // When
-        let cached = try await repository.searchShows(for: Constants.query)
+        let shows = try await repository.searchShows(for: Constants.query)
 
         // Then
-        let receivedQueries = await remote.receivedQueries
-        XCTAssertEqual(receivedQueries.count, 1)
-        XCTAssertEqual(cached, original)
+        let expected = TVShow(id: 169,
+                              name: "Breaking Bad",
+                              genres: ["Drama", "Crime"],
+                              premiered: "2008-01-20",
+                              ended: "2013-09-29",
+                              summary: "Breaking Bad follows a chemistry teacher.",
+                              rating: 9.2,
+                              mediumImageURL: URL(string: "https://static.tvmaze.com/medium.jpg"),
+                              originalImageURL: URL(string: "https://static.tvmaze.com/original.jpg"),
+                              channel: "AMC")
+        XCTAssertEqual(shows, [expected])
+    }
+
+    func test_searchShows_mapsMissingFieldsToNilAndFallsBackToWebChannel() async throws {
+        // Given: a web show without network, rating or image
+        let dto = TVShowSearchResultDTO.stub(id: 1,
+                                             name: "Breaking Point",
+                                             network: nil,
+                                             webChannel: "Netflix",
+                                             rating: nil,
+                                             image: nil)
+        let repository = TVSearchRepository(remote: TVSearchRemoteMock(result: .success([dto])), cache: cache)
+
+        // When
+        let shows = try await repository.searchShows(for: Constants.query)
+
+        // Then
+        let show = try XCTUnwrap(shows.first)
+        XCTAssertEqual(show.channel, "Netflix")
+        XCTAssertNil(show.rating)
+        XCTAssertNil(show.mediumImageURL)
+        XCTAssertNil(show.originalImageURL)
+    }
+
+    func test_searchShows_mapsSummaryHTMLToPlainTextKeepingParagraphs() async throws {
+        // Given
+        let html = """
+        <p>Walter <b>White</b> is a <i>chemistry</i> <strong>teacher</strong>.</p>
+        <p>His life changes <em>dramatically</em>.<br>Forever.</p>
+        """
+
+        // When
+        let summary = try await mappedSummary(from: html)
+
+        // Then
+        XCTAssertEqual(summary, "Walter White is a chemistry teacher.\nHis life changes dramatically.\nForever.")
+    }
+
+    func test_searchShows_decodesCommonHTMLEntitiesInSummary() async throws {
+        // When
+        let summary = try await mappedSummary(from: "<p>Walter &amp; Jesse&#39;s &quot;business&quot;&nbsp;&lt;3&gt;</p>")
+
+        // Then
+        XCTAssertEqual(summary, #"Walter & Jesse's "business" <3>"#)
+    }
+
+    func test_searchShows_summaryWithoutText_isNil() async throws {
+        for html in [nil, "", "   ", "<p></p>", "<p> <br> </p>"] {
+            let summary = try await mappedSummary(from: html)
+            XCTAssertNil(summary, "Expected nil summary for \(String(describing: html))")
+        }
+    }
+}
+
+// MARK: - Helpers
+
+private extension TVSearchRepositoryTests {
+    func mappedSummary(from html: String?) async throws -> String? {
+        let remote = TVSearchRemoteMock(result: .success([.stub(id: 169, name: "Breaking Bad", summary: html)]))
+        let repository = TVSearchRepository(remote: remote, cache: TVSearchCache())
+        return try await repository.searchShows(for: Constants.query).first?.summary
     }
 }
 
 // MARK: - Stubs
 
 private extension TVShowSearchResultDTO {
-    static func stub(id: Int, name: String) -> TVShowSearchResultDTO {
-        TVShowSearchResultDTO(score: 0.9,
-                              show: TVShowDTO(id: id,
+    static func stub(id: Int,
+                     name: String,
+                     summary: String? = "<p><b>Breaking Bad</b> follows a chemistry teacher.</p>",
+                     network: String? = "AMC",
+                     webChannel: String? = nil,
+                     rating: Double? = 9.2,
+                     image: TVImageDTO? = TVImageDTO(medium: URL(string: "https://static.tvmaze.com/medium.jpg"),
+                                                     original: URL(string: "https://static.tvmaze.com/original.jpg"))) -> TVShowSearchResultDTO {
+        TVShowSearchResultDTO(show: TVShowDTO(id: id,
                                               name: name,
-                                              type: "Scripted",
-                                              language: "English",
                                               genres: ["Drama", "Crime"],
-                                              status: "Ended",
-                                              runtime: 60,
-                                              averageRuntime: 60,
                                               premiered: "2008-01-20",
                                               ended: "2013-09-29",
-                                              officialSite: "https://www.amc.com/shows/breaking-bad",
-                                              summary: "<p><b>\(name)</b> follows a chemistry teacher.</p>",
-                                              rating: TVRatingDTO(average: 9.2),
-                                              image: TVImageDTO(medium: URL(string: "https://static.tvmaze.com/medium.jpg"),
-                                                                original: URL(string: "https://static.tvmaze.com/original.jpg")),
-                                              schedule: TVScheduleDTO(time: "22:00", days: ["Sunday"]),
-                                              network: TVNetworkDTO(name: "AMC"),
-                                              webChannel: nil))
+                                              summary: summary,
+                                              rating: TVRatingDTO(average: rating),
+                                              image: image,
+                                              network: network.map(TVNetworkDTO.init(name:)),
+                                              webChannel: webChannel.map(TVNetworkDTO.init(name:))))
     }
 }

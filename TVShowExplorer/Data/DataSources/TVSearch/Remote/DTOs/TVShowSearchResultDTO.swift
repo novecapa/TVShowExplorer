@@ -6,6 +6,5 @@
 //
 
 struct TVShowSearchResultDTO: Decodable, Sendable {
-    let score: Double
     let show: TVShowDTO
 }

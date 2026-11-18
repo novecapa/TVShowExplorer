@@ -9,21 +9,25 @@ import Foundation
 @testable import TVShowExplorer
 
 extension TVShow {
-    static func stub(id: Int, name: String) -> TVShow {
+    static func stub(id: Int,
+                     name: String,
+                     genres: [String] = [],
+                     premiered: String? = nil,
+                     ended: String? = nil,
+                     summary: String? = nil,
+                     rating: Double? = nil,
+                     mediumImageURL: URL? = nil,
+                     originalImageURL: URL? = nil,
+                     channel: String? = nil) -> TVShow {
         TVShow(id: id,
                name: name,
-               type: nil,
-               language: nil,
-               genres: [],
-               status: nil,
-               premiered: nil,
-               ended: nil,
-               summary: nil,
-               rating: nil,
-               mediumImageURL: nil,
-               originalImageURL: nil,
-               runtime: nil,
-               channel: nil,
-               officialSite: nil)
+               genres: genres,
+               premiered: premiered,
+               ended: ended,
+               summary: summary,
+               rating: rating,
+               mediumImageURL: mediumImageURL,
+               originalImageURL: originalImageURL,
+               channel: channel)
     }
 }
