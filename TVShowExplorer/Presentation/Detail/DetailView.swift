@@ -31,6 +31,7 @@ struct DetailView: View {
                 poster
                 header
                 summarySection
+                attribution
             }
             .padding()
         }
@@ -160,6 +161,17 @@ private extension DetailView {
                     .foregroundStyle(.secondary)
             }
         }
+    }
+}
+
+// MARK: - Attribution
+
+private extension DetailView {
+
+    var attribution: some View {
+        Text("Data provided by [TVmaze](https://www.tvmaze.com)")
+            .font(.footnote)
+            .foregroundStyle(.secondary)
     }
 }
 
