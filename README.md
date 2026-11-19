@@ -3,7 +3,7 @@
 A SwiftUI app for searching TV shows and viewing their details, using the [TVMaze public API](https://www.tvmaze.com/api). It focuses on clear layering, Swift Concurrency, reliable search cancellation, a time-limited cache and unit tests.
 
 <p align="center">
-  <img src="docs/demo.gif" alt="TVShowExplorer demo">
+  <img width="294" height="640" alt="output" src="https://github.com/user-attachments/assets/e99a46be-fe91-4c45-97da-325af306dc66" />
 </p>
 
 ## Features
