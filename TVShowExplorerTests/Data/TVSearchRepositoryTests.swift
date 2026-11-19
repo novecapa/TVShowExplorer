@@ -62,7 +62,7 @@ final class TVSearchRepositoryTests: XCTestCase {
         XCTAssertEqual(cached, original)
     }
 
-    func test_searchShows_afterTTLExpires_callsRemoteAgain() async throws {
+    func test_searchShows_afterTTLExpires_callsRemoteAgainAndUpdatesCache() async throws {
         // Given
         let remote = TVSearchRemoteMock(result: .success([.stub(id: 169, name: "Breaking Bad")]))
         let repository = TVSearchRepository(remote: remote, cache: cache)
@@ -77,6 +77,8 @@ final class TVSearchRepositoryTests: XCTestCase {
         let receivedQueries = await remote.receivedQueries
         XCTAssertEqual(receivedQueries.count, 2)
         XCTAssertEqual(refreshed.map(\.id), [170])
+        let cachedShows = await cache.shows(for: Constants.query)
+        XCTAssertEqual(cachedShows, refreshed)
     }
 
     func test_searchShows_emptyResponse_isCached() async throws {
