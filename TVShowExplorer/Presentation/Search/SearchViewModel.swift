@@ -12,6 +12,10 @@ import Observation
 @Observable
 final class SearchViewModel {
 
+    private enum Constants {
+        static let maxRecentSearches = 5
+    }
+
     enum State: Equatable {
         case idle
         case loading
@@ -28,6 +32,7 @@ final class SearchViewModel {
     }
 
     private(set) var state: State = .idle
+    private(set) var recentSearches: [String] = []
 
     @ObservationIgnored private(set) var searchTask: Task<Void, Never>?
 
@@ -45,14 +50,30 @@ final class SearchViewModel {
     }
 }
 
+// MARK: - Recent searches
+
+extension SearchViewModel {
+
+    func recordSelectedSearch() {
+        guard case .loaded = state else { return }
+        let text = trimmedQuery
+        let olderSearches = recentSearches.filter { $0.lowercased() != text.lowercased() }
+        recentSearches = Array(([text] + olderSearches).prefix(Constants.maxRecentSearches))
+    }
+}
+
 // MARK: - Search
 
 private extension SearchViewModel {
 
+    var trimmedQuery: String {
+        query.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
     func search() {
         searchTask?.cancel()
 
-        let text = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        let text = trimmedQuery
         guard !text.isEmpty else {
             searchTask = nil
             state = .idle

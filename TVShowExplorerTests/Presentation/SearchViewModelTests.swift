@@ -351,6 +351,78 @@ final class SearchViewModelTests: XCTestCase {
         // Then
         XCTAssertEqual(viewModel.state, .idle)
     }
+
+    // MARK: - Recent searches
+
+    func test_completedSearch_isRecordedOnlyWhenAResultIsSelected() async {
+        // Given
+        let viewModel = makeViewModel(returningResultsFor: [Constants.query])
+        viewModel.query = Constants.query
+        await viewModel.searchTask?.value
+        XCTAssertEqual(viewModel.state, .loaded([Constants.breakingBad]))
+        XCTAssertEqual(viewModel.recentSearches, [])
+
+        // When
+        viewModel.recordSelectedSearch()
+
+        // Then
+        XCTAssertEqual(viewModel.recentSearches, [Constants.query])
+    }
+
+    func test_recordSelectedSearch_withExistingQueryInAnotherCase_movesItFirstWithoutDuplicates() async {
+        // Given
+        let viewModel = makeViewModel(returningResultsFor: ["breaking bad", "friends", "dexter", "Friends"])
+        for query in ["breaking bad", "friends", "dexter"] {
+            await selectResult(for: query, in: viewModel)
+        }
+        XCTAssertEqual(viewModel.recentSearches, ["dexter", "friends", "breaking bad"])
+
+        // When
+        await selectResult(for: "Friends", in: viewModel)
+
+        // Then: the entry keeps the latest text
+        XCTAssertEqual(viewModel.recentSearches, ["Friends", "dexter", "breaking bad"])
+    }
+
+    func test_recordSelectedSearch_trimsWhitespace() async {
+        // Given
+        let viewModel = makeViewModel(returningResultsFor: ["dexter"])
+
+        // When
+        await selectResult(for: "  dexter \n", in: viewModel)
+
+        // Then
+        XCTAssertEqual(viewModel.recentSearches, ["dexter"])
+    }
+
+    func test_recordSelectedSearch_whileNewQueryIsLoading_recordsNothing() async {
+        // Given: results for "dexter" are shown and the user starts typing another query
+        let viewModel = makeViewModel(returningResultsFor: ["dexter"])
+        viewModel.query = "dexter"
+        await viewModel.searchTask?.value
+        viewModel.query = "fri"
+        XCTAssertEqual(viewModel.state, .loading)
+
+        // When
+        viewModel.recordSelectedSearch()
+
+        // Then: neither the hidden results' query nor the unfinished one is saved
+        XCTAssertEqual(viewModel.recentSearches, [])
+    }
+
+    func test_recordSelectedSearch_keepsTheFiveMostRecentQueries() async {
+        // Given
+        let queries = ["lost", "dark", "fargo", "friends", "dexter", "the office"]
+        let viewModel = makeViewModel(returningResultsFor: queries)
+
+        // When
+        for query in queries {
+            await selectResult(for: query, in: viewModel)
+        }
+
+        // Then
+        XCTAssertEqual(viewModel.recentSearches, ["the office", "dexter", "friends", "fargo", "dark"])
+    }
 }
 
 // MARK: - Helpers
@@ -358,5 +430,19 @@ final class SearchViewModelTests: XCTestCase {
 private extension SearchViewModelTests {
     func makeViewModel(useCase: TVSearchUseCaseMock) -> SearchViewModel {
         SearchViewModel(useCase: useCase, debounce: .zero)
+    }
+
+    func makeViewModel(returningResultsFor queries: [String]) -> SearchViewModel {
+        let results: [String: Result<[TVShow], Error>] = Dictionary(
+            uniqueKeysWithValues: queries.map { ($0, .success([Constants.breakingBad])) }
+        )
+        return makeViewModel(useCase: TVSearchUseCaseMock(results: results))
+    }
+
+    /// Searches `query` and opens one of its results.
+    func selectResult(for query: String, in viewModel: SearchViewModel) async {
+        viewModel.query = query
+        await viewModel.searchTask?.value
+        viewModel.recordSelectedSearch()
     }
 }

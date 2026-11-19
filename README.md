@@ -12,6 +12,7 @@ A SwiftUI app for searching TV shows and viewing their details, using the [TVMaz
 - Each new query cancels the previous search and its request. Outdated responses never replace newer results.
 - Results list with poster, genres, rating and premiere year. The detail screen adds years on air, channel and summary.
 - In-memory cache per query that expires after 3 minutes.
+- Recent searches as chips below the search field. A query is saved when you open one of its results (last 5, in memory only).
 - Idle, loading, empty and error states, with Retry.
 
 ## Tech Stack
@@ -85,7 +86,7 @@ Unit tests in `TVShowExplorerTests` are grouped by layer and use actor-based moc
 
 - **Domain**: the use case with a mocked repository.
 - **Data**: cache expiration, repository caching and mapping, network error mapping and decoding.
-- **Presentation**: view model states, debounce, cancellation and detail formatting.
+- **Presentation**: view model states, debounce, cancellation, recent searches and detail formatting.
 
 Race-condition tests are deterministic: the mock holds a request in flight and releases it on demand.
 

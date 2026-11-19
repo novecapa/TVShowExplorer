@@ -9,27 +9,78 @@ import SwiftUI
 
 struct SearchView: View {
 
+    private enum Constants {
+        static let chipSpacing: CGFloat = 8
+        static let chipsVerticalPadding: CGFloat = 8
+    }
+
     @State private var viewModel: SearchViewModel
+    @State private var path: [TVShow] = []
 
     init(viewModel: SearchViewModel) {
         _viewModel = State(initialValue: viewModel)
     }
 
     var body: some View {
-        NavigationStack {
-            content
-                .navigationTitle("TV Shows")
-                .searchable(text: $viewModel.query,
-                            placement: .navigationBarDrawer(displayMode: .always),
-                            prompt: "Search by show name")
-                .navigationDestination(for: TVShow.self) { show in
-                    DetailViewBuilder().build(show: show)
+        NavigationStack(path: $path) {
+            List {
+                if !viewModel.recentSearches.isEmpty {
+                    recentSearches
                 }
+                results
+            }
+            .listStyle(.plain)
+            .overlay {
+                stateOverlay
+            }
+            .navigationTitle("TV Shows")
+            .searchable(text: $viewModel.query,
+                        placement: .navigationBarDrawer(displayMode: .always),
+                        prompt: "Search by show name")
+            .navigationDestination(for: TVShow.self) { show in
+                DetailViewBuilder().build(show: show)
+            }
+        }
+        .onChange(of: path) { oldPath, newPath in
+            if newPath.count > oldPath.count {
+                viewModel.recordSelectedSearch()
+            }
+        }
+    }
+
+    private var recentSearches: some View {
+        ScrollView(.horizontal) {
+            HStack(spacing: Constants.chipSpacing) {
+                ForEach(viewModel.recentSearches, id: \.self) { recentSearch in
+                    Button(recentSearch) {
+                        viewModel.query = recentSearch
+                    }
+                }
+            }
+            .buttonStyle(.bordered)
+            .buttonBorderShape(.capsule)
+            .controlSize(.small)
+            .padding(.horizontal)
+            .padding(.vertical, Constants.chipsVerticalPadding)
+        }
+        .scrollIndicators(.hidden)
+        .listRowInsets(EdgeInsets())
+        .listRowSeparator(.hidden)
+    }
+
+    @ViewBuilder
+    private var results: some View {
+        if case .loaded(let shows) = viewModel.state {
+            ForEach(shows) { show in
+                NavigationLink(value: show) {
+                    TVShowCellView(show: show)
+                }
+            }
         }
     }
 
     @ViewBuilder
-    private var content: some View {
+    private var stateOverlay: some View {
         switch viewModel.state {
         case .idle:
             ContentUnavailableView("Search TV Shows",
@@ -37,13 +88,8 @@ struct SearchView: View {
                                    description: Text("Type the name of a show to start."))
         case .loading:
             ProgressView()
-        case .loaded(let shows):
-            List(shows) { show in
-                NavigationLink(value: show) {
-                    TVShowCellView(show: show)
-                }
-            }
-            .listStyle(.plain)
+        case .loaded:
+            EmptyView()
         case .empty:
             ContentUnavailableView.search(text: viewModel.query)
         case .error:
