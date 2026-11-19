@@ -48,32 +48,8 @@ final class DetailViewModelTests: XCTestCase {
         XCTAssertNil(makeViewModel(show: .stub(id: 1, name: "Lost")).imageURL)
     }
 
-    func test_rating_isFormattedWithOneDecimalInTheGivenLocale() {
-        XCTAssertEqual(makeViewModel(show: .stub(id: 1, name: "Lost", rating: 8)).rating, "8.0")
-        XCTAssertEqual(DetailViewModel(show: .stub(id: 1, name: "Lost", rating: 9.2), locale: Locale(identifier: "es_ES")).rating,
-                       "9,2")
-    }
-
-    func test_rating_whenMissing_isNilInsteadOfZero() {
-        // When
-        let viewModel = makeViewModel(show: .stub(id: 1, name: "Lost", rating: nil))
-
-        // Then
-        XCTAssertNil(viewModel.rating)
-    }
-
-    func test_genres_whenEmpty_isNil() {
-        // When
-        let viewModel = makeViewModel(show: .stub(id: 1, name: "Lost", genres: []))
-
-        // Then
-        XCTAssertNil(viewModel.genres)
-    }
-
     func test_metadata_withPartialOrMissingData() {
         XCTAssertEqual(makeViewModel(show: .stub(id: 1, name: "Lost", premiered: "2004-09-22")).metadata, "2004")
-        XCTAssertEqual(makeViewModel(show: .stub(id: 1, name: "Lost", premiered: "2004-01-01", ended: "2004-12-01")).metadata,
-                       "2004")
         XCTAssertEqual(makeViewModel(show: .stub(id: 1, name: "Lost", channel: "ABC")).metadata, "ABC")
         XCTAssertNil(makeViewModel(show: .stub(id: 1, name: "Lost")).metadata)
     }

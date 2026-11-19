@@ -36,18 +36,18 @@ struct TVShowCellView: View {
                 Text(show.name)
                     .font(.headline)
 
-                if !show.genres.isEmpty {
-                    Text(show.genres.joined(separator: ", "))
+                if let genres = show.formattedGenres {
+                    Text(genres)
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                 }
 
                 HStack {
-                    if let rating = show.rating {
+                    if let rating = show.formattedRating() {
                         Image(systemName: "star.fill")
-                        Text(rating.formatted(.number.precision(.fractionLength(1))))
+                        Text(rating)
                     }
-                    if let year = show.premiered?.prefix(4) {
+                    if let year = show.premiereYear {
                         Text(year)
                     }
                 }
